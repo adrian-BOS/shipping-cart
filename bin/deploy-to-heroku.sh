@@ -66,6 +66,20 @@ if [ $? -ne 0 ]; then
 fi
 print_success "Heroku remote added"
 
+# Check if PostgreSQL is already added
+print_status "Checking PostgreSQL database..."
+if ! heroku addons:info heroku-postgresql &> /dev/null; then
+    print_warning "PostgreSQL not found, adding it..."
+    heroku addons:create heroku-postgresql:mini
+    if [ $? -ne 0 ]; then
+        print_error "Failed to add PostgreSQL"
+        exit 1
+    fi
+    print_success "PostgreSQL added successfully"
+else
+    print_success "PostgreSQL already exists"
+fi
+
 # Set environment variables
 print_status "Setting environment variables..."
 heroku config:set RAILS_ENV=production
@@ -79,7 +93,7 @@ if ! git diff-index --quiet HEAD --; then
     print_warning "Found uncommitted changes"
     print_status "Committing changes..."
     git add .
-    git commit -m "Deploy to Heroku - $(date)"
+    git commit -m "Deploy to Heroku with PostgreSQL - $(date)"
     print_success "Changes committed"
 else
     print_success "No uncommitted changes found"
@@ -118,12 +132,14 @@ echo ""
 echo "🎉 ${GREEN}DEPLOYMENT COMPLETE!${NC}"
 echo "=============================================="
 echo "🌐 Your app is live at: https://$APP_NAME.herokuapp.com"
+echo "🗄️ Database: PostgreSQL (persistent)"
 echo ""
 echo "📊 Useful commands:"
 echo "  heroku logs --tail          # View live logs"
 echo "  heroku restart              # Restart the app"
 echo "  heroku run rails console    # Access Rails console"
 echo "  heroku ps                   # Check app status"
+echo "  heroku pg:info              # Check database info"
 echo ""
 echo "🔧 Your Cash Register features:"
 echo "  ✅ Product catalog (Green Tea, Strawberries, Coffee)"
