@@ -1,0 +1,240 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-8 text-center">Cash Register</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Product Catalog -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">Products</h2>
+      <div class="space-y-4">
+        <% @products.each do |product| %>
+          <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+            <div>
+              <h3 class="font-medium"><%= product.name %></h3>
+              <p class="text-sm text-gray-600">Code: <%= product.code %></p>
+              <p class="text-lg font-semibold text-green-600">€<%= number_with_precision(product.price, precision: 2) %></p>
+            </div>
+            <button
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+              onclick="addToCart('<%= product.code %>')"
+            >
+              Add to Cart
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Shopping Cart -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Shopping Cart</h2>
+        <button
+          class="text-red-500 hover:text-red-700 text-sm"
+          onclick="clearCart()"
+        >
+          Clear Cart
+        </button>
+      </div>
+
+      <div id="cart-items" class="space-y-3 mb-6">
+        <% if @cart.cart_items.any? %>
+          <% @cart.cart_items.includes(:product).each do |item| %>
+            <% original_subtotal = item.quantity * item.product.price %>
+            <% discounted_subtotal = calculate_item_subtotal(item) %>
+            <% promotion_info = get_promotion_info(item) %>
+            <div class="flex items-center justify-between p-3 border rounded-lg">
+              <div class="flex-1">
+                <h4 class="font-medium"><%= item.product.name %></h4>
+                <p class="text-sm text-gray-600">€<%= number_with_precision(item.product.price, precision: 2) %> each</p>
+
+                <% if promotion_info && promotion_info[:current] < promotion_info[:needed] %>
+                  <div class="mt-2">
+                    <div class="flex items-center justify-between text-xs text-blue-600 mb-1">
+                      <span><%= promotion_info[:message] %></span>
+                      <span><%= promotion_info[:current] %>/<%= promotion_info[:needed] %></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <% progress_percentage = (promotion_info[:current].to_f / promotion_info[:needed] * 100).round %>
+                      <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: <%= progress_percentage %>%"></div>
+                    </div>
+                  </div>
+                <% elsif promotion_info && promotion_info[:active] %>
+                  <div class="mt-2">
+                    <p class="text-xs text-green-600 font-medium">✓ <%= promotion_info[:message] %></p>
+                  </div>
+                <% elsif promotion_info && !promotion_info[:active] %>
+                  <div class="mt-2">
+                    <div class="flex items-center justify-between text-xs text-blue-600 mb-1">
+                      <span><%= promotion_info[:message] %></span>
+                      <span><%= promotion_info[:current] %>/<%= promotion_info[:needed] %></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <% progress_percentage = (promotion_info[:current].to_f / promotion_info[:needed] * 100).round %>
+                      <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: <%= progress_percentage %>%"></div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+              <div class="text-right ml-4">
+                <p class="font-medium">Qty: <%= item.quantity %></p>
+                <% if original_subtotal != discounted_subtotal %>
+                  <p class="text-sm text-gray-500 line-through">€<%= number_with_precision(original_subtotal, precision: 2) %></p>
+                  <p class="text-sm text-green-600 font-semibold">€<%= number_with_precision(discounted_subtotal, precision: 2) %></p>
+                <% else %>
+                  <p class="text-sm text-gray-600">€<%= number_with_precision(original_subtotal, precision: 2) %></p>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-gray-500 text-center py-8">Your cart is empty</p>
+        <% end %>
+      </div>
+
+      <div class="border-t pt-4">
+        <div class="flex justify-between items-center text-lg font-semibold">
+          <span>Total:</span>
+          <span id="cart-total" class="text-green-600">€<%= number_with_precision(@cart.total_price, precision: 2) %></span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">Items: <span id="cart-count"><%= @cart.item_count %></span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Rules Info -->
+  <div class="mt-8 bg-blue-50 rounded-lg p-6">
+    <h3 class="text-lg font-semibold mb-3">Special Offers</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div class="bg-white p-3 rounded border">
+        <h4 class="font-medium text-green-700">Green Tea (GR1)</h4>
+        <p>Buy One Get One Free</p>
+      </div>
+      <div class="bg-white p-3 rounded border">
+        <h4 class="font-medium text-red-700">Strawberries (SR1)</h4>
+        <p>Buy 3+ for €4.50 each</p>
+      </div>
+      <div class="bg-white p-3 rounded border">
+        <h4 class="font-medium text-brown-700">Coffee (CF1)</h4>
+        <p>Buy 3+ for 2/3 price</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function addToCart(productCode) {
+  fetch(`/carts/<%= @cart.id %>/add_item`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ product_code: productCode })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      updateCartDisplay(data.cart);
+      showMessage(data.message, 'success');
+    } else {
+      showMessage(data.message, 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('An error occurred', 'error');
+  });
+}
+
+function clearCart() {
+  if (!confirm('Are you sure you want to clear the cart?')) return;
+
+  fetch(`/carts/<%= @cart.id %>/clear`, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      updateCartDisplay(data.cart);
+      showMessage(data.message, 'success');
+    } else {
+      showMessage(data.message, 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('An error occurred', 'error');
+  });
+}
+
+function updateCartDisplay(cartData) {
+  const cartItemsContainer = document.getElementById('cart-items');
+  const cartTotal = document.getElementById('cart-total');
+  const cartCount = document.getElementById('cart-count');
+
+  if (cartData.items.length === 0) {
+    cartItemsContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Your cart is empty</p>';
+  } else {
+    cartItemsContainer.innerHTML = cartData.items.map(item => {
+      const priceDisplay = item.has_discount
+        ? `<p class="text-sm text-gray-500 line-through">€${parseFloat(item.original_subtotal).toFixed(2)}</p>
+           <p class="text-sm text-green-600 font-semibold">€${parseFloat(item.discounted_subtotal).toFixed(2)}</p>`
+        : `<p class="text-sm text-gray-600">€${parseFloat(item.original_subtotal).toFixed(2)}</p>`;
+
+      let promotionDisplay = '';
+      if (item.promotion_info) {
+        if (item.promotion_info.active) {
+          promotionDisplay = `<div class="mt-2"><p class="text-xs text-green-600 font-medium">✓ ${item.promotion_info.message}</p></div>`;
+        } else {
+          const progressPercentage = Math.round((item.promotion_info.current / item.promotion_info.needed) * 100);
+          promotionDisplay = `
+            <div class="mt-2">
+              <div class="flex items-center justify-between text-xs text-blue-600 mb-1">
+                <span>${item.promotion_info.message}</span>
+                <span>${item.promotion_info.current}/${item.promotion_info.needed}</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: ${progressPercentage}%"></div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="flex items-center justify-between p-3 border rounded-lg">
+          <div class="flex-1">
+            <h4 class="font-medium">${item.product_name}</h4>
+            <p class="text-sm text-gray-600">€${parseFloat(item.unit_price).toFixed(2)} each</p>
+            ${promotionDisplay}
+          </div>
+          <div class="text-right ml-4">
+            <p class="font-medium">Qty: ${item.quantity}</p>
+            ${priceDisplay}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  cartTotal.textContent = `€${parseFloat(cartData.total_price).toFixed(2)}`;
+  cartCount.textContent = cartData.item_count;
+}
+
+function showMessage(message, type) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+    type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+  }`;
+  messageDiv.textContent = message;
+
+  document.body.appendChild(messageDiv);
+
+  setTimeout(() => {
+    messageDiv.remove();
+  }, 3000);
+}
+</script>
