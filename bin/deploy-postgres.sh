@@ -15,7 +15,7 @@ if ! heroku auth:whoami &> /dev/null; then
 fi
 
 echo "📱 Adding Heroku remote..."
-heroku git:remote -a quiet-wave-05593
+heroku git:remote -a shopping-cart-adrian
 
 echo "🗄️ Adding PostgreSQL database..."
 heroku addons:create heroku-postgresql:mini

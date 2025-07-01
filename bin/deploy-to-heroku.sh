@@ -54,7 +54,7 @@ print_success "Logged in as: $(heroku auth:whoami)"
 
 # Get app name
 print_status "Getting Heroku app name..."
-APP_NAME="quiet-wave-05593"
+APP_NAME="shopping-cart-adrian"
 print_success "Using app: $APP_NAME"
 
 # Add Heroku remote
