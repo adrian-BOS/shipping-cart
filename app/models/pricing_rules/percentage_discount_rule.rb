@@ -11,7 +11,7 @@ module PricingRules
       original_price = total_quantity * items.first.product.price
 
       if total_quantity >= min_quantity
-        original_price * (1 - discount_percentage)
+        original_price * discount_percentage
       else
         original_price
       end

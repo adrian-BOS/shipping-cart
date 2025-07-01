@@ -47,7 +47,7 @@ class ApplicationController < ActionController::Base
               type: "bogo",
               current: cart_item.quantity,
               needed: 1,
-              message: "Buy 1 Get 1 Free! You get #{free_items} free items",
+              message: "Buy 1 Get 1 Free! You get #{ActionController::Base.helpers.pluralize(free_items, 'free item')}",
               active: true
             }
           end
