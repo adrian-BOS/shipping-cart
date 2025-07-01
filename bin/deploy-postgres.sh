@@ -18,7 +18,7 @@ echo "📱 Adding Heroku remote..."
 heroku git:remote -a shopping-cart-adrian
 
 echo "🗄️ Adding PostgreSQL database..."
-heroku addons:create heroku-postgresql:mini
+heroku addons:create heroku-postgresql:essential-0
 
 echo "⚙️ Setting environment variables..."
 heroku config:set RAILS_ENV=production
@@ -39,5 +39,5 @@ heroku run rails db:seed
 echo "🌐 Opening app..."
 heroku open
 
-echo "✅ Done! Your app is live at: https://quiet-wave-05593.herokuapp.com"
+echo "✅ Done! Your app is live at: https://shopping-cart-adrian-599554139a47.herokuapp.com/"
 echo "🗄️ Database: PostgreSQL (persistent)"

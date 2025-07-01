@@ -70,7 +70,7 @@ print_success "Heroku remote added"
 print_status "Checking PostgreSQL database..."
 if ! heroku addons:info heroku-postgresql &> /dev/null; then
     print_warning "PostgreSQL not found, adding it..."
-    heroku addons:create heroku-postgresql:mini
+    heroku addons:create heroku-postgresql:essential-0
     if [ $? -ne 0 ]; then
         print_error "Failed to add PostgreSQL"
         exit 1
